@@ -1,0 +1,158 @@
+<meta charset="utf-8">
+
+<link href="https://fonts.googleapis.com/css?family=Saira:100,200,300,400,500,600,700,800,900" rel="stylesheet">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v5.min.js"></script>
+
+<h1>Numero goal e assist per calciatore</h1>
+<!-- Create a div where the graph will take place -->
+<div id="pie_chart"></div>
+
+<script>// Dataset
+var data = {
+    Messi: {
+        'goal': 9,
+        'assist': 20
+    },
+    Ronaldo: {
+        'goal': 19,
+        'assist': 12
+    },
+    Suarez: {
+        'goal': 15,
+        'assist': 10
+    },
+    Torres: {
+        'goal': 11,
+        'assist': 5
+    },
+    Zidane: {
+        'goal': 8,
+        'assist': 22
+    },
+    Kakà: {
+        'goal': 14,
+        'assist': 15
+    },
+    Griezmann: {
+        'goal': 25,
+        'assist': 5
+    },
+    Drogba: {
+        'goal': 18,
+        'assist': 13
+    },
+    Gerrard: {
+        'goal': 9,
+        'assist': 4
+    },
+    Lampard: {
+        'goal': 6,
+        'assist': 17
+    }
+}
+
+// Imposto il raggio come metà del minimo fra altezza e larghezza togliendoci il margin
+var radius = Math.min(570, 450) / 2 - 60
+
+// Creo l'oggetto con altezza e larghezza
+var svg = d3.select("#pie_chart")
+    .append("svg")
+    .attr("width", 570)
+    .attr("height", 450)
+    .append("g")
+    .attr("transform", "translate(" + 570 / 2 + "," + 450 / 2 + ")")
+
+// Setto dominio d'interesse e scala di colori da usare
+// In caso di stesso n° di goal ed assist, il colore rimane 
+// lo stesso
+var color = d3.scaleOrdinal()
+    .domain(["goal", "assist"])
+    .range(['rgb(0, 93, 166, 0.7)', 'rgb(3, 169, 244, 0.7)', 'rgb(255, 121, 0, 0.7)',
+        'rgb(242, 194, 73, 0.7)', 'rgb(95, 67, 196, 0.7)', 'rgb(148, 111, 221, 0.7)',
+        'rgb(0, 132, 91, 0.7)', 'rgb(24, 196, 130, 0.7)', 'rgb(164, 198, 95, 0.7)',
+        'rgb(175, 231, 62, 0.7)', 'rgb(183, 28, 28, 0.7)', 'rgb(247, 91, 87, 0.7)',
+        'rgb(128, 175, 213, 0.7)', 'rgb(129, 212, 250, 0.7)', 'rgb(255, 188, 128, 0.7)',
+        'rgb(248, 225, 164, 0.7)', 'rgb(175, 161, 226, 0.7)', 'rgb(201, 183, 238, 0.7)',
+        'rgb(128, 194, 173, 0.7)', 'rgb(139, 226, 193, 0.7)'
+    ]);
+
+// Funzione per l'aggiornamento
+function update(data) {
+
+    // Restituisco valori, nessun ordinamento specifico, se non quello alfabetico
+    var pie = d3.pie()
+        .value(function(d) {
+            return d.value.goal;
+        })
+        .sort(function(a, b) {
+            return d3.ascending(a.key, b.key);
+        })
+
+    // Codifico i dati aggiungendo le info della torta
+    var data_pie = pie(d3.entries(data))
+
+    // Collego i dati al path
+    var chart = svg.selectAll("path")
+        .data(data_pie)
+
+    // Prima di aggiungere una nuova label, rimuovo le precedenti
+    svg.selectAll('text').remove()
+
+    // opzioni per le label (transizioni, posizioni, ecc)
+    var label = svg.selectAll("d").data(data_pie)
+        .enter()
+        .append("text").transition()
+        .duration(500)
+        .style('font-family', 'Saira')
+        .attr("text-anchor", "middle")
+        .attr("x", function(d) {
+            var a = d.startAngle + (d.endAngle - d.startAngle) / 2 - Math.PI / 2;
+            d.cx = Math.cos(a) * (radius - 75);
+            d.x = Math.cos(a) * (radius + 50)
+            return d.x;
+        })
+        .attr("y", function(d) {
+            var a = d.startAngle + (d.endAngle - d.startAngle) / 2 - Math.PI / 2;
+            d.cy = Math.sin(a) * (radius - 75);
+            d.y = Math.sin(a) * (radius + 30)
+            return d.y;
+        })
+        .text(function(d) {
+            return d.data.key;
+        })
+
+    // Creazione/Aggiornamento del pie chart, il colore dello spicchio
+    // è definito dal numero di assist
+    chart
+        .enter()
+        .append('path')
+        .merge(chart)
+        .transition()
+        .duration(700)
+        .attr('d', d3.arc()
+            .innerRadius(0)
+            .outerRadius(radius)
+        )
+        .attr('fill', function(d) {
+            return (color(d.data.value.assist))
+        })
+        .attr("stroke", "white")
+        .style("stroke-width", "2px")
+}
+// Aggiornamento iniziale
+update(data)
+
+// Gestisco il click dell'utente
+d3.selectAll("path").on("click", function(d) {
+
+    var calciatore = d.data.key
+    var goal = d.data.value.goal;
+    var assist = d.data.value.assist;
+    data[calciatore].assist = goal
+    data[calciatore].goal = assist
+    update(data)
+
+});
+</script>
